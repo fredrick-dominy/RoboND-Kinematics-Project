@@ -18,6 +18,10 @@ from geometry_msgs.msg import Pose
 from mpmath import *
 from sympy import *
 
+# Conversion Factors
+rtd = 180. / np.pi  # radians to degrees
+dtr = np.pi / 180.  # degrees to radians
+
 
 def handle_calculate_IK(req):
     rospy.loginfo("Received %s eef-poses from the plan" % len(req.poses))
@@ -32,8 +36,10 @@ def handle_calculate_IK(req):
             joint_trajectory_point = JointTrajectoryPoint()
 
             # Define DH param symbols
-
-
+            q1, q2, q3, q4, q5, q6 = symbols('q1:7')
+            d1, d2, d3, d4, d5, d6 = symbols('d1:7')
+            a0, a1, a2, a3, a4, a5 = symbols('a0:6')
+            alpha0, alpha1, alpha2, alpha3, alpha4, alpha5 = symbols('alpha0:6')
             
             # Joint angle symbols
 
