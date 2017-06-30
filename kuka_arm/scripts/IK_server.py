@@ -7,9 +7,11 @@
 #
 # All Rights Reserved.
 
-# Author: Harsh Pandya
+# Author: Harsh Pandya - Fredrick Dominy
 
 # import modules
+import random
+
 import rospy
 import tf
 from kuka_arm.srv import *
@@ -18,9 +20,13 @@ from geometry_msgs.msg import Pose
 from mpmath import *
 from sympy import *
 
+
+from sympy import init_printing
+init_printing()
+
 # Conversion Factors
-rtd = 180. / np.pi  # radians to degrees
-dtr = np.pi / 180.  # degrees to radians
+# rtd = 180. / np.pi  # radians to degrees
+# dtr = np.pi / 180.  # degrees to radians
 
 
 def handle_calculate_IK(req):
@@ -36,27 +42,63 @@ def handle_calculate_IK(req):
             joint_trajectory_point = JointTrajectoryPoint()
 
             # Define DH param symbols
-            q1, q2, q3, q4, q5, q6 = symbols('q1:7')
-            d1, d2, d3, d4, d5, d6 = symbols('d1:7')
-            a0, a1, a2, a3, a4, a5 = symbols('a0:6')
-            alpha0, alpha1, alpha2, alpha3, alpha4, alpha5 = symbols('alpha0:6')
-            
+            q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
+            d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
+            a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
+            alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
+
             # Joint angle symbols
 
 
-      
+
             # Modified DH params
+            # alpha = twist angle
+            # a = link length
+            # d = link offset
+            # q = joint vars
+
+            dh_params = {
+                alpha0:     0,      a0: 0,      d1: 0.75,
+                alpha1:     -pi/2,  a1: 0.35,   d2: 0,      q2: q2-pi/2,
+                alpha2:     0,      a2: 1.25,   d3: 0,
+                alpha3:     -pi/2,  a3: -0.054, d4: 1.50,
+                alpha4:     pi/2,   a4: 0,      d5: 0,
+                alpha5:     -pi/2,  a5: 0,      d6: 0,
+                alpha6:     0,      a6: 0,      d7: 0.303,      q7:0
+            }
 
 
-            
             # Define Modified DH Transformation matrix
+            def construct_matrix(a, alpha, d, q):
+                temp = Matrix([[cos(q), -sin(q), 0, a],
+                               [sin(q) * cos(alpha), cos(q1) * cos(alpha), -sin(alpha), -sin(alpha) * d],
+                               [sin(q) * sin(alpha), cos(q1) * sin(alpha), cos(alpha), cos(alpha) * d],
+                               [0, 0, 0, 1]])
 
-
+                return temp.subs(dh_params)
 
             # Create individual transformation matrices
+            T0_1 = construct_matrix(a0, alpha0, d1, q1)
+            T1_2 = construct_matrix(a1,alpha1,d2,d2)
+            T2_3 = construct_matrix(a2,alpha2,d3,d3)
+
+            # T0_3 = simplify(T0_1 * T1_2 * T2_3 )
+
+            T3_4 = construct_matrix(a3,alpha3,d4,d4)
+            T4_5 = construct_matrix(a4,alpha4,d5,d5)
+            T5_6 = construct_matrix(a5,alpha5,d6,d6)
+            T6_7 = construct_matrix(a6,alpha6,d7,d7)
 
 
-            
+            T0_7 = simplify(T3_4 * T4_5 * T5_6 * T6_7 )
+            # print(T0_3)
+
+
+
+
+
+
+
             # Extract end-effector position and orientation from request
             # px,py,pz = end-effector position
             # roll, pitch, yaw = end-effector orientation
@@ -67,13 +109,25 @@ def handle_calculate_IK(req):
             (roll, pitch, yaw) = tf.transformations.euler_from_quaternion(
                 [req.poses[x].orientation.x, req.poses[x].orientation.y,
                     req.poses[x].orientation.z, req.poses[x].orientation.w])
-     
+
             # Calculate joint angles using Geometric IK method
 
-		
-
+            theta1 = atan2(px,py)
+            print(theta1)
 
             # Populate response for the IK request
+
+
+            def randomize():
+                return random.random()
+
+            # theta1 = randomize()
+            theta2 = randomize()
+            theta3 = randomize()
+            theta4 = randomize()
+            theta5 = randomize()
+            theta6 = randomize()
+
             # In the next line replace theta1,theta2...,theta6 by your joint angle variables
             joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
             joint_trajectory_list.append(joint_trajectory_point)
