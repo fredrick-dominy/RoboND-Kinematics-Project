@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2017 Electric Movement Inc.
+# Copyright (C) 2017 Udacity Inc.
 #
 # This file is part of Robotic Arm: Pick and Place project for Udacity
 # Robotics nano-degree program
 #
 # All Rights Reserved.
 
-# Author: Harsh Pandya - Fredrick Dominy
+# Author: Harsh Pandya
 
 # import modules
 import random
@@ -80,12 +80,34 @@ def handle_calculate_IK(req):
         print "No valid poses received"
         return -1
     else:
+
+        ### Your FK code here
+        # Create symbols
+	#
+	#
+	# Create Modified DH parameters
+	#
+	#
+	# Define Modified DH Transformation matrix
+	#
+	#
+	# Create individual transformation matrices
+	#
+	#
+	# Extract rotation matrices from the transformation matrices
+	#
+	#
+        ###
+
         # Initialize service response
         joint_trajectory_list = []
         for x in xrange(0, len(req.poses)):
             # IK code starts here
             joint_trajectory_point = JointTrajectoryPoint()
 
+	    # Extract end-effector position and orientation from request
+	    # px,py,pz = end-effector position
+	    # roll, pitch, yaw = end-effector orientation
 
             # Extract end-effector position and orientation from request
             # px,py,pz = end-effector position
@@ -97,6 +119,15 @@ def handle_calculate_IK(req):
             (roll, pitch, yaw) = tf.transformations.euler_from_quaternion(
                 [req.poses[x].orientation.x, req.poses[x].orientation.y,
                     req.poses[x].orientation.z, req.poses[x].orientation.w])
+
+            ### Your IK code here
+	    # Compensate for rotation discrepancy between DH parameters and Gazebo
+	    #
+	    #
+	    # Calculate joint angles using Geometric IK method
+	    #
+	    #
+            ###
 
             # Calculate wrist center - Step 2: is to find the location of the WC relative to the base frame.
 
