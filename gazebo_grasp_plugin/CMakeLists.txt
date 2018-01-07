@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(gazebo_grasp_plugin)
 
+add_compile_options(-std=c++11)
 add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
