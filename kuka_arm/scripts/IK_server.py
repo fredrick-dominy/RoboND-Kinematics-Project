@@ -20,13 +20,38 @@ from geometry_msgs.msg import Pose
 from mpmath import *
 from sympy import *
 
-
 from sympy import init_printing
+
 init_printing()
 
 # Conversion Factors
 # rtd = 180. / np.pi  # radians to degrees
 # dtr = np.pi / 180.  # degrees to radians
+
+
+# Define DH param symbols
+q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')  # joint vars
+d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')  # link offset
+a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')  # link length
+alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')  # twist angle
+
+# Step 1: is to complete the DH parameter table for the manipulator.
+# Modified DH params
+
+# alpha = twist angle
+# a = link length
+# d = link offset
+# q = joint vars
+dh_params = {
+    alpha0: 0, a0: 0, d1: 0.75, q1: q1,
+    alpha1: -pi / 2, a1: 0.35, d2: 0, q2: q2 - pi / 2,
+    alpha2: 0, a2: 1.25, d3: 0, q3: q3,
+    alpha3: -pi / 2, a3: -0.054, d4: 1.50, q4: q4,
+    alpha4: pi / 2, a4: 0, d5: 0, q5: q5,
+    alpha5: -pi / 2, a5: 0, d6: 0, q6: q6,
+    alpha6: 0, a6: 0, d7: 0.303, q7: 0
+}
+
 
 # Define Modified DH Transformation matrix
 def construct_matrix(a, alpha, d, q):
@@ -37,41 +62,17 @@ def construct_matrix(a, alpha, d, q):
 
     return temp.subs(dh_params)
 
-# Define DH param symbols
-q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
-d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
-a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
-alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('alpha0:7')
-
-# Step 1: is to complete the DH parameter table for the manipulator.
-# Modified DH params
-# alpha = twist angle
-# a = link length
-# d = link offset
-# q = joint vars
-dh_params = {
-    alpha0:     0,      a0: 0,      d1: 0.75,
-    alpha1:     -pi/2,  a1: 0.35,   d2: 0,      q2: q2-pi/2,
-    alpha2:     0,      a2: 1.25,   d3: 0,
-    alpha3:     -pi/2,  a3: -0.054, d4: 1.50,
-    alpha4:     pi/2,   a4: 0,      d5: 0,
-    alpha5:     -pi/2,  a5: 0,      d6: 0,
-    alpha6:     0,      a6: 0,      d7: 0.303,      q7:0
-}
-
 
 # Create individual transformation matrices
 T0_1 = construct_matrix(a0, alpha0, d1, q1)
-T1_2 = construct_matrix(a1,alpha1,d2,d2)
-T2_3 = construct_matrix(a2,alpha2,d3,d3)
-T3_4 = construct_matrix(a3,alpha3,d4,d4)
-T4_5 = construct_matrix(a4,alpha4,d5,d5)
-T5_6 = construct_matrix(a5,alpha5,d6,d6)
-T6_7 = construct_matrix(a6,alpha6,d7,d7)
+T1_2 = construct_matrix(a1, alpha1, d2, q2)
+T2_3 = construct_matrix(a2, alpha2, d3, q3)
+T3_4 = construct_matrix(a3, alpha3, d4, q4)
+T4_5 = construct_matrix(a4, alpha4, d5, q5)
+T5_6 = construct_matrix(a5, alpha5, d6, q6)
+T6_EE = construct_matrix(a6, alpha6, d7, q7)
 
-T0_6 = simplify( T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 )
-
-
+T0_EE = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_EE)
 
 
 def handle_calculate_IK(req):
@@ -81,33 +82,10 @@ def handle_calculate_IK(req):
         return -1
     else:
 
-        ### Your FK code here
-        # Create symbols
-	#
-	#
-	# Create Modified DH parameters
-	#
-	#
-	# Define Modified DH Transformation matrix
-	#
-	#
-	# Create individual transformation matrices
-	#
-	#
-	# Extract rotation matrices from the transformation matrices
-	#
-	#
-        ###
-
-        # Initialize service response
         joint_trajectory_list = []
         for x in xrange(0, len(req.poses)):
             # IK code starts here
             joint_trajectory_point = JointTrajectoryPoint()
-
-	    # Extract end-effector position and orientation from request
-	    # px,py,pz = end-effector position
-	    # roll, pitch, yaw = end-effector orientation
 
             # Extract end-effector position and orientation from request
             # px,py,pz = end-effector position
@@ -118,47 +96,74 @@ def handle_calculate_IK(req):
 
             (roll, pitch, yaw) = tf.transformations.euler_from_quaternion(
                 [req.poses[x].orientation.x, req.poses[x].orientation.y,
-                    req.poses[x].orientation.z, req.poses[x].orientation.w])
+                 req.poses[x].orientation.z, req.poses[x].orientation.w])
 
             ### Your IK code here
-	    # Compensate for rotation discrepancy between DH parameters and Gazebo
-	    #
-	    #
-	    # Calculate joint angles using Geometric IK method
-	    #
-	    #
+            # Compensate for rotation discrepancy between DH parameters and Gazebo
+            #
+            #
+            # Calculate joint angles using Geometric IK method
+            #
             ###
 
-            # Calculate wrist center - Step 2: is to find the location of the WC relative to the base frame.
+            r, p, y = symbols('r p y')  # for ROLL,PITCH and YAW (from video)
 
+            ROT_x = Matrix([
+                [1, 0, 0],
+                [0, cos(r), -sin(r)],
+                [0, sin(r), cos(r)]
+            ])
+            ROT_y = Matrix([
+                [cos(p), 0, sin(p)],
+                [0, 1, 0],
+                [-sin(p), 0, cos(p)]
+            ])
+            ROT_z = Matrix([
+                [cos(y), -sin(y), 0],
+                [sin(y), cos(y), 0],
+                [0, 0, 1]
+            ])
 
+            ROT_EE = ROT_z * ROT_y * ROT_x
 
+            # Rotation error info in KR210 forward kin section(video)
+            ROT_Error = ROT_z.subs(y, radians(180)) * ROT_y.subs(p, radians(-90))
 
-            # Calculate joint angles using Geometric IK method
+            ROT_EE = ROT_EE * ROT_Error
+            ROT_EE = ROT_EE.subs({'r': roll, 'p': pitch, 'y': yaw})
 
-            # if px < 0.001 :
-            #     if py < 0.001:
-            #         print('px and py are negative at ', px, ' ', py, ' thus Q3')
-            #         theta1 = atan(py / px)+pi
-            #     else:
-            #         print('px is neg and py is pos at ', px, ' ', py, ' thus Q2')
-            #         theta1 = atan(py / px) + pi/2
-            # else:
-            #     if py < 0.001:
-            #         print('px is pos and py is neg at ', px, ' ', py, ' thus Q4')
-            #         theta1 = atan(py / px) - pi/2
-            #     else:
-            print('px and py are ', px, ' ', px)
-            #         theta1 = atan(py / px)
+            EE = Matrix([
+                [px],
+                [py],
+                [pz]
+            ])
+
+            WC = EE - (0.303) * ROT_EE[:, 2]
 
             # Populate response for the IK request
-            theta1 = atan2(py, px)
-            print('theta1 is ', theta1)
-            theta2 = 0.3
-            theta3 = pi/6
-            theta4 = 0
-            theta5 = 0
-            theta6 = 0
+            theta1 = atan2(WC[1], WC[0])
+
+            # SSS triangle for theta2 and theta3 (video)
+            side_a = 1.501
+            side_b = sqrt(pow((sqrt(WC[0] * WC[0] + WC[1] * WC[1]) - 0.35), 2) + pow((WC[2] - 0.75), 2))
+            side_c = 1.25
+
+            angle_a = acos((side_b * side_b + side_c * side_c - side_a * side_a) / (2 * side_b * side_c))
+            angle_b = acos((side_a * side_a + side_c * side_c - side_b * side_b) / (2 * side_a * side_c))
+            angle_c = acos((side_a * side_a + side_b * side_b - side_c * side_c) / (2 * side_a * side_b))
+
+            theta2 = pi / 2 - angle_a - atan2(WC[2] - 0.75, sqrt(WC[0] * WC[0] + WC[1] * WC[1]) - 0.35)
+            theta3 = pi / 2 - (angle_b + 0.036)
+
+            R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3]
+            R0_3 = R0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
+
+            R3_6 = R0_3.inv("LU") * ROT_EE
+
+            # Euler angles from rotation matrix (video)
+            theta4 = atan2(R3_6[2, 2], -R3_6[0, 2])
+            theta5 = atan2(sqrt(R3_6[0, 2] * R3_6[0, 2] + R3_6[2, 2] * R3_6[2, 2]), R3_6[1, 2])
+            theta6 = atan2(-R3_6[1, 1], R3_6[1, 0])
 
             # In the next line replace theta1,theta2...,theta6 by your joint angle variables
             joint_trajectory_point.positions = [theta1, theta2, theta3, theta4, theta5, theta6]
@@ -174,6 +179,7 @@ def IK_server():
     s = rospy.Service('calculate_ik', CalculateIK, handle_calculate_IK)
     print "Ready to receive an IK request"
     rospy.spin()
+
 
 if __name__ == "__main__":
     IK_server()
