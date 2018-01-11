@@ -73,21 +73,23 @@ def test_code(test_case):
     # d = link offset
     # q = joint vars
     DH_Table = {
-        alpha0: 0, a0: 0, d1: 0.75, q1: q1,
-        alpha1: -pi / 2, a1: 0.35, d2: 0, q2: q2 - pi / 2,
-        alpha2: 0, a2: 1.25, d3: 0, q3: q3,
-        alpha3: -pi / 2, a3: -0.054, d4: 1.50, q4: q4,
-        alpha4: pi / 2, a4: 0, d5: 0, q5: q5,
-        alpha5: -pi / 2, a5: 0, d6: 0, q6: q6,
-        alpha6: 0, a6: 0, d7: 0.303, q7: 0
+        alpha0:         0,  a0:        0,   d1:  0.75,  q1:              q1,
+        alpha1:  -pi / 2.,  a1:     0.35,   d2:     0,  q2:(- pi / 2.) + q2,
+        alpha2:         0,  a2:     1.25,   d3:     0,  q3:              q3,
+        alpha3:  -pi / 2.,  a3:   -0.054,   d4:  1.50,  q4:              q4,
+        alpha4:   pi / 2.,  a4:        0,   d5:     0,  q5:              q5,
+        alpha5:  -pi / 2.,  a5:        0,   d6:     0,  q6:              q6,
+        alpha6:         0,  a6:        0,   d7: 0.303,  q7:               0
     }
 
     # Define Modified DH Transformation matrix
     def TF_Matrix(alpha, a, d, q):
-        temp = Matrix([[cos(q), -sin(q), 0, a],
-                       [sin(q) * cos(alpha), cos(q1) * cos(alpha), -sin(alpha), -sin(alpha) * d],
-                       [sin(q) * sin(alpha), cos(q1) * sin(alpha), cos(alpha), cos(alpha) * d],
-                       [0, 0, 0, 1]])
+        temp = Matrix([
+            [             cos(q),             -sin(q),           0,               a],
+            [sin(q) * cos(alpha), cos(q) * cos(alpha), -sin(alpha), -sin(alpha) * d],
+            [sin(q) * sin(alpha), cos(q) * sin(alpha),  cos(alpha),  cos(alpha) * d],
+            [                  0,                   0,           0,               1]
+        ])
 
         return temp
 
